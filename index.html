@@ -1,0 +1,1903 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1.0" />
+<title>Ventus Clothing — POS System</title>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/xlsx/0.18.5/xlsx.full.min.js"></script>
+<style>
+  @import url('https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700&family=Space+Grotesk:wght@400;500;600;700&display=swap');
+
+  :root {
+    --bg: #0f0f11;
+    --surface: #17171b;
+    --card: #1e1e24;
+    --border: #2a2a33;
+    --accent: #6c63ff;
+    --accent2: #a78bfa;
+    --success: #22c55e;
+    --danger: #ef4444;
+    --warning: #f59e0b;
+    --text: #f1f0ff;
+    --muted: #8b8b9e;
+    --font-head: 'Space Grotesk', sans-serif;
+    --font-body: 'Inter', sans-serif;
+  }
+
+  * { box-sizing: border-box; margin: 0; padding: 0; }
+
+  body {
+    background: var(--bg);
+    color: var(--text);
+    font-family: var(--font-body);
+    min-height: 100vh;
+  }
+
+  /* ── LOGIN ── */
+  #loginScreen {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh;
+    background: radial-gradient(ellipse at 60% 20%, #1a1035 0%, var(--bg) 70%);
+  }
+  .login-box {
+    background: var(--card);
+    border: 1px solid var(--border);
+    border-radius: 20px;
+    padding: 48px 40px;
+    width: 100%; max-width: 400px;
+    box-shadow: 0 24px 64px #0007;
+  }
+  .login-logo { font-family: var(--font-head); font-size: 2rem; font-weight: 700; color: var(--accent2); letter-spacing: -1px; }
+  .login-sub { color: var(--muted); font-size: .85rem; margin-bottom: 32px; }
+  .tab-row { display: flex; gap: 8px; margin-bottom: 24px; }
+  .tab-btn {
+    flex: 1; padding: 8px; border: 1px solid var(--border);
+    background: transparent; color: var(--muted);
+    border-radius: 8px; cursor: pointer; font-size: .85rem;
+    transition: all .2s;
+  }
+  .tab-btn.active { background: var(--accent); color: #fff; border-color: var(--accent); }
+  label { display: block; font-size: .8rem; color: var(--muted); margin-bottom: 4px; margin-top: 14px; }
+  input[type=text], input[type=password], input[type=number], input[type=date], select, textarea {
+    width: 100%; padding: 10px 14px;
+    background: var(--surface); border: 1px solid var(--border);
+    border-radius: 10px; color: var(--text); font-size: .9rem;
+    outline: none; transition: border .2s;
+  }
+  input:focus, select:focus, textarea:focus { border-color: var(--accent); }
+  .btn {
+    padding: 10px 20px; border: none; border-radius: 10px;
+    cursor: pointer; font-size: .9rem; font-weight: 500;
+    transition: all .2s; font-family: var(--font-body);
+  }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #5a52e0; }
+  .btn-success { background: var(--success); color: #fff; }
+  .btn-danger { background: var(--danger); color: #fff; }
+  .btn-outline { background: transparent; border: 1px solid var(--border); color: var(--text); }
+  .btn-outline:hover { border-color: var(--accent); color: var(--accent); }
+  .btn-warning { background: var(--warning); color: #000; }
+  .btn-full { width: 100%; margin-top: 20px; }
+
+  /* ── SHELL ── */
+  #app { display: none; }
+  .shell { display: flex; min-height: 100vh; }
+
+  /* SIDEBAR */
+  .sidebar {
+    width: 220px; background: var(--surface);
+    border-right: 1px solid var(--border);
+    display: flex; flex-direction: column;
+    padding: 24px 0; position: fixed; height: 100vh;
+    z-index: 100;
+  }
+  .sidebar-logo {
+    padding: 0 16px 22px;
+    border-bottom: 1px solid var(--border);
+  }
+  .logo-inner {
+    display: flex; align-items: center; gap: 11px;
+    background: linear-gradient(135deg, #1a1035 0%, #12102a 100%);
+    border: 1px solid #3a2f6a;
+    border-radius: 14px;
+    padding: 11px 13px;
+    position: relative;
+    overflow: hidden;
+  }
+  .logo-inner::before {
+    content: '';
+    position: absolute; top: -18px; right: -18px;
+    width: 60px; height: 60px;
+    background: radial-gradient(circle, #7c6fff33 0%, transparent 70%);
+    pointer-events: none;
+  }
+  .logo-icon {
+    width: 36px; height: 36px; border-radius: 10px; flex-shrink: 0;
+    background: linear-gradient(135deg, #7c6fff 0%, #a78bfa 100%);
+    display: flex; align-items: center; justify-content: center;
+    font-size: 1.1rem;
+    box-shadow: 0 4px 12px #7c6fff55;
+  }
+  .logo-text-wrap { display: flex; flex-direction: column; }
+  .logo-name {
+    font-family: var(--font-head); font-size: 1.05rem; font-weight: 700;
+    letter-spacing: .5px; line-height: 1;
+    background: linear-gradient(90deg, #c4b5fd, #a78bfa);
+    -webkit-background-clip: text; -webkit-text-fill-color: transparent;
+    background-clip: text;
+  }
+  .logo-sub {
+    font-size: .62rem; color: #6c6a8a; font-weight: 500;
+    letter-spacing: 1.5px; text-transform: uppercase; margin-top: 3px;
+  }
+  .logo-dot {
+    width: 7px; height: 7px; border-radius: 50%;
+    background: var(--success);
+    position: absolute; top: 10px; right: 10px;
+    box-shadow: 0 0 6px var(--success);
+  }
+  .nav { flex: 1; padding-top: 16px; }
+  /* NAV SECTION LABEL */
+  .nav-section-label {
+    font-size: .62rem; letter-spacing: 1.4px; color: #45455a;
+    font-weight: 600; padding: 14px 20px 4px;
+    text-transform: uppercase;
+  }
+  .nav-item {
+    display: flex; align-items: center; gap: 11px;
+    padding: 7px 12px; cursor: pointer;
+    color: var(--muted); font-size: .84rem; font-weight: 500;
+    transition: all .18s; border-radius: 10px; margin: 1px 8px;
+    border: 1px solid transparent; position: relative;
+  }
+  .nav-item:hover { color: var(--text); background: #ffffff09; }
+  .nav-item.active {
+    color: #fff;
+    background: linear-gradient(90deg,rgba(108,99,255,.18),rgba(108,99,255,.06));
+    border-color: rgba(108,99,255,.28);
+  }
+  .nav-icon-box {
+    width: 30px; height: 30px; border-radius: 8px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .18s;
+  }
+  .nav-label { font-size: .84rem; line-height: 1; }
+  .sidebar-footer { padding: 16px 20px; border-top: 1px solid var(--border); }
+  .user-badge { display: flex; align-items: center; gap: 10px; }
+  .user-avatar {
+    width: 34px; height: 34px; border-radius: 50%;
+    background: var(--accent); display: flex; align-items: center;
+    justify-content: center; font-weight: 700; font-size: .85rem;
+  }
+  .user-name { font-size: .82rem; font-weight: 500; }
+  .user-role { font-size: .72rem; color: var(--muted); }
+
+  /* MAIN */
+  .main { margin-left: 220px; flex: 1; padding: 28px 32px; }
+  .page { display: none; }
+  .page.active { display: block; }
+  .page-header { margin-bottom: 24px; }
+  .page-title { font-family: var(--font-head); font-size: 1.6rem; font-weight: 700; }
+  .page-sub { color: var(--muted); font-size: .85rem; margin-top: 4px; }
+
+  /* CARDS */
+  .card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px;
+  }
+  .stat-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 16px; margin-bottom: 24px; }
+  .stat-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px;
+  }
+  .stat-label { font-size: .78rem; color: var(--muted); text-transform: uppercase; letter-spacing: .5px; }
+  .stat-value { font-family: var(--font-head); font-size: 1.8rem; font-weight: 700; margin-top: 6px; }
+  .stat-value.green { color: var(--success); }
+  .stat-value.purple { color: var(--accent2); }
+  .stat-value.orange { color: var(--warning); }
+
+  /* TABLE */
+  table { width: 100%; border-collapse: collapse; font-size: .87rem; }
+  th { text-align: left; padding: 10px 14px; color: var(--muted); font-weight: 500; font-size: .78rem; text-transform: uppercase; letter-spacing: .5px; border-bottom: 1px solid var(--border); }
+  td { padding: 12px 14px; border-bottom: 1px solid #1e1e24; vertical-align: middle; }
+  tr:last-child td { border-bottom: none; }
+  tr:hover td { background: #ffffff04; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: .75rem; font-weight: 500;
+  }
+  .badge-green { background: #22c55e22; color: var(--success); }
+  .badge-red { background: #ef444422; color: var(--danger); }
+  .badge-yellow { background: #f59e0b22; color: var(--warning); }
+
+  /* BILLING */
+  .billing-grid { display: grid; grid-template-columns: 1fr 380px; gap: 20px; align-items: start; }
+  .scan-box {
+    background: var(--surface); border: 2px dashed var(--border);
+    border-radius: 14px; padding: 24px;
+    display: flex; align-items: center; gap: 14px;
+  }
+  .scan-icon { font-size: 2rem; }
+  .scan-box input { flex: 1; background: transparent; border: none; color: var(--text); font-size: 1rem; outline: none; }
+  .bill-panel {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 14px; padding: 20px;
+    position: sticky; top: 20px;
+  }
+  .bill-header { display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px; }
+  .bill-id { font-size: .78rem; color: var(--muted); }
+  .bill-items { max-height: 340px; overflow-y: auto; margin-bottom: 14px; }
+  .bill-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 10px 0; border-bottom: 1px solid var(--border); gap: 8px;
+  }
+  .bill-item:last-child { border-bottom: none; }
+  .item-info { flex: 1; }
+  .item-name { font-size: .88rem; font-weight: 500; }
+  .item-meta { font-size: .75rem; color: var(--muted); }
+  .qty-ctrl { display: flex; align-items: center; gap: 6px; }
+  .qty-btn {
+    width: 26px; height: 26px; border-radius: 6px; border: 1px solid var(--border);
+    background: var(--surface); color: var(--text); cursor: pointer; font-size: .9rem;
+  }
+  .qty-num { font-size: .88rem; font-weight: 600; min-width: 20px; text-align: center; }
+  .item-total { font-size: .88rem; font-weight: 600; min-width: 70px; text-align: right; }
+  .bill-summary { border-top: 1px solid var(--border); padding-top: 14px; }
+  .summary-row { display: flex; justify-content: space-between; font-size: .85rem; margin-bottom: 6px; }
+  .summary-row.grand { font-weight: 700; font-size: 1rem; color: var(--accent2); margin-top: 8px; padding-top: 8px; border-top: 1px solid var(--border); }
+  .bill-actions { display: flex; gap: 10px; margin-top: 14px; }
+  .bill-actions .btn { flex: 1; }
+
+  /* PRODUCT FORM */
+  .form-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
+  .form-group { display: flex; flex-direction: column; gap: 4px; }
+  .form-group.full { grid-column: span 2; }
+
+  /* MODAL */
+  .modal-overlay {
+    display: none; position: fixed; inset: 0;
+    background: #0009; z-index: 1000;
+    align-items: center; justify-content: center;
+  }
+  .modal-overlay.open { display: flex; }
+  .modal {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 18px; padding: 28px; width: 100%; max-width: 480px;
+    max-height: 90vh; overflow-y: auto;
+  }
+  .modal-title { font-family: var(--font-head); font-size: 1.2rem; font-weight: 600; margin-bottom: 20px; }
+  .modal-actions { display: flex; gap: 10px; margin-top: 20px; justify-content: flex-end; }
+
+  /* PRINT */
+  @media print {
+    body * { visibility: hidden; }
+    #printArea, #printArea * { visibility: visible; }
+    #printArea {
+      position: absolute; left: 0; top: 0;
+      width: 80mm; font-family: monospace; font-size: 11px;
+    }
+  }
+  #printArea { display: none; }
+
+  /* SEARCH */
+  .search-bar {
+    display: flex; align-items: center; gap: 10px; margin-bottom: 20px;
+  }
+  .search-bar input { flex: 1; }
+
+  /* TOAST */
+  #toast {
+    position: fixed; bottom: 28px; right: 28px;
+    background: var(--success); color: #fff;
+    padding: 12px 20px; border-radius: 10px;
+    font-size: .88rem; font-weight: 500;
+    opacity: 0; transform: translateY(10px);
+    transition: all .3s; z-index: 9999;
+    pointer-events: none;
+  }
+  #toast.show { opacity: 1; transform: translateY(0); }
+  #toast.error { background: var(--danger); }
+
+  .top-bar {
+    display: flex; justify-content: space-between;
+    align-items: center; margin-bottom: 20px;
+  }
+  .no-data { text-align: center; padding: 40px; color: var(--muted); }
+  .disc-row { display: flex; align-items: center; gap: 8px; }
+
+  /* ── EXCEL EXPORT CARDS ── */
+  .xl-card {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 16px; padding: 20px;
+    transition: border-color .2s;
+  }
+  .xl-card:hover { border-color: #3a3a50; }
+  .xl-card-top {
+    display: flex; align-items: center; gap: 13px; margin-bottom: 4px;
+  }
+  .xl-icon-wrap {
+    width: 44px; height: 44px; border-radius: 12px; flex-shrink: 0;
+    display: flex; align-items: center; justify-content: center;
+    background: color-mix(in srgb, var(--xc,#6c63ff) 15%, transparent);
+    color: var(--xc, #6c63ff);
+    border: 1px solid color-mix(in srgb, var(--xc,#6c63ff) 30%, transparent);
+    box-shadow: 0 4px 14px color-mix(in srgb, var(--xc,#6c63ff) 20%, transparent);
+  }
+  .xl-card-title { font-weight: 600; font-family: var(--font-head); font-size: .95rem; }
+  .xl-card-sub   { font-size: .75rem; color: var(--muted); margin-top: 2px; }
+  /* download button */
+  .xl-btn {
+    display: inline-flex; align-items: center; gap: 6px;
+    padding: 8px 14px; border-radius: 8px; font-size: .8rem;
+    font-weight: 600; cursor: pointer; border: none;
+    font-family: var(--font-body); transition: all .18s;
+  }
+  .xl-dl   { background: var(--accent); color: #fff; flex: 1; justify-content: center; }
+  .xl-dl:hover { background: #5a52e0; }
+  .xl-view { background: var(--surface); color: var(--text); border: 1px solid var(--border); flex: 1; justify-content: center; }
+  .xl-view:hover { border-color: var(--accent2); color: var(--accent2); }
+
+  /* ── LIVE VIEW MODAL ── */
+  .xlv-overlay {
+    display: none; position: fixed; inset: 0;
+    background: #000a; z-index: 2000;
+    align-items: flex-start; justify-content: center;
+    padding: 24px 16px;
+  }
+  .xlv-overlay.open { display: flex; }
+  .xlv-modal {
+    background: var(--card); border: 1px solid var(--border);
+    border-radius: 18px; width: 100%; max-width: 980px;
+    max-height: 90vh; display: flex; flex-direction: column;
+    box-shadow: 0 32px 80px #0009;
+  }
+  .xlv-head {
+    display: flex; align-items: center; justify-content: space-between;
+    padding: 18px 24px; border-bottom: 1px solid var(--border);
+  }
+  .xlv-head-left { display: flex; align-items: center; gap: 12px; }
+  .xlv-icon {
+    width: 36px; height: 36px; border-radius: 10px;
+    display: flex; align-items: center; justify-content: center;
+    background: rgba(16,185,129,.15); color: #10b981;
+    border: 1px solid rgba(16,185,129,.3);
+    font-size: 1rem;
+  }
+  .xlv-title { font-family: var(--font-head); font-size: 1.05rem; font-weight: 700; }
+  .xlv-subtitle { font-size: .75rem; color: var(--muted); margin-top: 1px; }
+  .xlv-close {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: var(--surface); border: 1px solid var(--border);
+    color: var(--muted); cursor: pointer; font-size: 1rem;
+    display: flex; align-items: center; justify-content: center;
+    transition: all .15s;
+  }
+  .xlv-close:hover { color: var(--text); border-color: var(--accent); }
+  /* tab bar */
+  .xlv-tabs {
+    display: flex; gap: 4px; padding: 12px 24px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface); border-radius: 0;
+  }
+  .xlv-tab {
+    padding: 6px 16px; border-radius: 7px; font-size: .8rem;
+    font-weight: 500; cursor: pointer; border: none;
+    background: transparent; color: var(--muted);
+    transition: all .15s; font-family: var(--font-body);
+  }
+  .xlv-tab.active { background: var(--accent); color: #fff; }
+  /* spreadsheet grid */
+  .xlv-body { flex: 1; overflow: auto; padding: 16px 24px 20px; }
+  .xlv-sheet-wrap { overflow-x: auto; border-radius: 10px; border: 1px solid var(--border); }
+  .xlv-sheet {
+    border-collapse: collapse; font-size: .78rem;
+    font-family: var(--font-body); width: 100%; min-width: 600px;
+  }
+  .xlv-sheet th {
+    background: #13131e; color: var(--muted);
+    padding: 9px 14px; text-align: left;
+    font-size: .7rem; font-weight: 600; text-transform: uppercase;
+    letter-spacing: .5px; border-bottom: 2px solid var(--border);
+    white-space: nowrap; position: sticky; top: 0; z-index: 1;
+  }
+  .xlv-sheet td {
+    padding: 9px 14px; border-bottom: 1px solid #1a1a26;
+    color: #d0cfea; white-space: nowrap;
+  }
+  .xlv-sheet tr:last-child td { border-bottom: none; }
+  .xlv-sheet tr:hover td { background: #ffffff05; }
+  .xlv-sheet td:first-child { color: var(--accent2); font-weight: 500; }
+  /* row number col */
+  .xlv-rn { color: var(--muted) !important; font-size: .7rem !important; font-weight: 400 !important; min-width: 36px; }
+  .xlv-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 12px 24px; border-top: 1px solid var(--border);
+    font-size: .78rem; color: var(--muted);
+  }
+  .xlv-foot-btns { display: flex; gap: 8px; }
+
+  /* SCAN-TO-ADD strip */
+  .scan-strip {
+    display: flex; align-items: center; gap: 10px;
+    background: #0f0e1a;
+    border: 1.5px dashed #3a2f6a;
+    border-radius: 10px;
+    padding: 10px 14px;
+    margin-bottom: 18px;
+    transition: border-color .2s;
+  }
+  .scan-strip:focus-within { border-color: var(--accent); border-style: solid; }
+  .scan-strip-icon { font-size: 1.2rem; flex-shrink: 0; }
+  .scan-strip input {
+    flex: 1; background: transparent; border: none;
+    color: var(--text); font-size: .9rem; outline: none; padding: 0;
+    width: 0;
+  }
+  .scan-strip-label { font-size: .72rem; color: var(--muted); white-space: nowrap; }
+  .scan-strip-status {
+    font-size: .72rem; padding: 3px 8px; border-radius: 6px;
+    font-weight: 500; white-space: nowrap;
+  }
+  .scan-strip-status.found  { background: #22c55e22; color: var(--success); }
+  .scan-strip-status.notfound { background: #ef444422; color: var(--danger); }
+  .scan-strip-status.waiting { background: #6c63ff22; color: var(--accent2); }
+
+  /* ══════════════════════════════════════════════════
+     RESPONSIVE  —  Mobile · Tablet · Laptop · Desktop
+  ══════════════════════════════════════════════════ */
+
+  /* Hamburger — hidden on desktop */
+  .hamburger {
+    display: none; position: fixed;
+    top: 12px; left: 12px; z-index: 400;
+    width: 40px; height: 40px; border-radius: 10px;
+    background: var(--surface); border: 1px solid var(--border);
+    cursor: pointer; flex-direction: column;
+    align-items: center; justify-content: center; gap: 5px;
+    box-shadow: 0 2px 12px #0005;
+  }
+  .hamburger span {
+    display: block; width: 18px; height: 2px;
+    background: var(--text); border-radius: 2px;
+    transition: transform .25s, opacity .25s;
+  }
+  .hamburger.open span:nth-child(1) { transform: translateY(7px) rotate(45deg); }
+  .hamburger.open span:nth-child(2) { opacity: 0; }
+  .hamburger.open span:nth-child(3) { transform: translateY(-7px) rotate(-45deg); }
+
+  /* Backdrop */
+  .sidebar-backdrop {
+    display: none; position: fixed; inset: 0;
+    background: #000c; z-index: 150; backdrop-filter: blur(2px);
+  }
+  .sidebar-backdrop.show { display: block; }
+
+  /* ── LARGE LAPTOP / DESKTOP  ≥ 1280px ── */
+  @media (min-width: 1280px) {
+    .sidebar { width: 230px; }
+    .main    { margin-left: 230px; padding: 32px 36px; }
+    .stat-grid { grid-template-columns: repeat(4,1fr); gap: 18px; }
+    #page-excel > div:first-of-type { grid-template-columns: repeat(3,1fr) !important; }
+  }
+
+  /* ── LAPTOP  1024px – 1279px ── */
+  @media (min-width: 1024px) and (max-width: 1279px) {
+    .sidebar { width: 210px; }
+    .main    { margin-left: 210px; padding: 26px 28px; }
+    .stat-grid { grid-template-columns: repeat(4,1fr); gap: 14px; }
+    .stat-value { font-size: 1.5rem; }
+    #page-excel > div:first-of-type { grid-template-columns: repeat(3,1fr) !important; }
+  }
+
+  /* ── TABLET  768px – 1023px ── */
+  @media (min-width: 768px) and (max-width: 1023px) {
+    .sidebar { width: 190px; }
+    .main    { margin-left: 190px; padding: 22px 22px; }
+    .logo-name { font-size: .9rem; }
+    .nav-label { font-size: .8rem; }
+    .stat-grid { grid-template-columns: repeat(2,1fr); gap: 12px; }
+    .stat-value { font-size: 1.4rem; }
+    .billing-grid { grid-template-columns: 1fr; gap: 16px; }
+    .bill-panel { position: static; }
+    #page-excel > div:first-of-type { grid-template-columns: repeat(2,1fr) !important; }
+    .xlv-modal { max-width: 96vw; }
+  }
+
+  /* ── MOBILE  < 768px ── */
+  @media (max-width: 767px) {
+
+    /* show hamburger */
+    .hamburger { display: flex; }
+
+    /* sidebar slides in from left */
+    .sidebar {
+      width: 250px;
+      transform: translateX(-100%);
+      transition: transform .28s cubic-bezier(.4,0,.2,1);
+      z-index: 200; box-shadow: 6px 0 32px #0009;
+    }
+    .sidebar.open { transform: translateX(0); }
+
+    /* main fills full width, pad top for hamburger */
+    .main { margin-left: 0 !important; padding: 62px 14px 28px; }
+
+    /* page headings */
+    .page-title { font-size: 1.2rem; }
+    .page-sub   { font-size: .78rem; }
+
+    /* stat grid — 2 col */
+    .stat-grid {
+      grid-template-columns: repeat(2,1fr);
+      gap: 10px; margin-bottom: 16px;
+    }
+    .stat-card  { padding: 14px; border-radius: 12px; }
+    .stat-label { font-size: .7rem; }
+    .stat-value { font-size: 1.3rem; margin-top: 4px; }
+
+    /* billing — stack */
+    .billing-grid { grid-template-columns: 1fr; gap: 14px; }
+    .bill-panel   { position: static; }
+    .scan-box     { padding: 12px 14px; gap: 8px; }
+    .scan-icon    { font-size: 1.3rem; }
+    .bill-actions { gap: 8px; }
+    .bill-actions .btn { padding: 9px 10px; font-size: .82rem; }
+    .disc-row     { flex-wrap: wrap; gap: 6px; }
+
+    /* tables scroll */
+    .card { padding: 12px; border-radius: 12px; overflow-x: auto; }
+    table { min-width: 520px; }
+    th, td { padding: 8px 10px; font-size: .76rem; }
+
+    /* top bar */
+    .top-bar {
+      flex-direction: column; align-items: flex-start; gap: 10px;
+    }
+
+    /* login */
+    .login-box  { padding: 28px 20px; margin: 16px; border-radius: 16px; }
+    .login-logo { font-size: 1.6rem; }
+    .login-sub  { margin-bottom: 22px; }
+
+    /* excel cards — 1 col */
+    #page-excel > div:first-of-type {
+      grid-template-columns: 1fr !important;
+    }
+    .xl-card     { padding: 14px; }
+    .xl-icon-wrap{ width: 38px; height: 38px; }
+    .xl-icon-wrap svg { width: 18px; height: 18px; }
+    .xl-btn      { font-size: .78rem; padding: 8px 10px; }
+
+    /* product modal slides up from bottom */
+    .modal-overlay { padding: 0; align-items: flex-end; }
+    .modal {
+      max-width: 100% !important;
+      border-radius: 18px 18px 0 0 !important;
+      padding: 20px 16px;
+      max-height: 92vh;
+    }
+    .form-grid        { grid-template-columns: 1fr !important; gap: 10px; }
+    .form-group.full  { grid-column: span 1 !important; }
+    .modal-actions    { flex-direction: row; }
+
+    /* live excel modal slides up */
+    .xlv-overlay { padding: 0; align-items: flex-end; }
+    .xlv-modal   {
+      max-width: 100%; border-radius: 16px 16px 0 0;
+      max-height: 88vh;
+    }
+    .xlv-head   { padding: 14px 14px; }
+    .xlv-body   { padding: 10px 12px 12px; }
+    .xlv-tabs   { padding: 8px 12px; gap: 6px; overflow-x: auto; }
+    .xlv-tab    { white-space: nowrap; font-size: .75rem; padding: 5px 12px; }
+    .xlv-foot   {
+      flex-direction: column; gap: 8px;
+      align-items: stretch; padding: 10px 14px;
+    }
+    .xlv-foot-btns { display: flex; gap: 8px; }
+    .xlv-foot-btns .xl-btn { flex: 1; justify-content: center; }
+    .xlv-title  { font-size: .95rem; }
+
+    /* search bar full width */
+    .search-bar input { max-width: 100% !important; }
+
+    /* sales date filter stack */
+    #page-sales > div:nth-child(2) {
+      flex-direction: column; align-items: flex-start; gap: 8px;
+    }
+
+    /* bill modal */
+    #billModal .modal {
+      border-radius: 18px 18px 0 0 !important;
+    }
+
+    /* toast bottom center */
+    #toast {
+      left: 50%; right: auto;
+      transform: translateX(-50%) translateY(10px);
+      bottom: 20px; white-space: nowrap;
+    }
+    #toast.show { transform: translateX(-50%) translateY(0); }
+  }
+
+  /* ── SMALL MOBILE  < 400px ── */
+  @media (max-width: 399px) {
+    .main       { padding: 58px 10px 20px; }
+    .stat-grid  { gap: 8px; }
+    .stat-value { font-size: 1.15rem; }
+    .stat-card  { padding: 12px 10px; }
+    .page-title { font-size: 1.05rem; }
+    .card       { padding: 10px; }
+    .bill-panel { padding: 12px; }
+    .billing-grid { gap: 10px; }
+    th, td      { padding: 7px 8px; font-size: .72rem; }
+    .xl-card    { padding: 12px; }
+    .xl-card-title { font-size: .85rem; }
+    .xl-icon-wrap  { width: 34px; height: 34px; }
+  }
+
+</style>
+</head>
+<body>
+
+<!-- ════ HAMBURGER (mobile) ════ -->
+<button class="hamburger" id="hamburger" onclick="toggleSidebar()" aria-label="Menu">
+  <span></span><span></span><span></span>
+</button>
+<div class="sidebar-backdrop" id="sidebarBackdrop" onclick="closeSidebar()"></div>
+
+<!-- ════════════════ LOGIN ════════════════ -->
+<div id="loginScreen">
+  <!-- rebuilt dynamically by bootApp() after IndexedDB opens -->
+</div>
+
+<!-- ════════════════ APP ════════════════ -->
+<div id="app">
+<div class="shell">
+
+  <!-- SIDEBAR -->
+  <aside class="sidebar">
+    <div class="sidebar-logo">
+      <div class="logo-inner">
+        <div class="logo-icon">👕</div>
+        <div class="logo-text-wrap">
+          <span class="logo-name">Ventus</span>
+          <span class="logo-sub">Clothing POS</span>
+        </div>
+        <div class="logo-dot"></div>
+      </div>
+    </div>
+    <nav class="nav">
+      <div class="nav-section-label">Main</div>
+
+      <div class="nav-item active" onclick="showPage('dashboard')" id="nav-dashboard">
+        <span class="nav-icon-box" style="background:rgba(108,99,255,.15);color:#a78bfa;border:1px solid rgba(108,99,255,.3)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <rect x="3" y="3" width="7" height="7" rx="1.5"/><rect x="14" y="3" width="7" height="7" rx="1.5"/>
+            <rect x="3" y="14" width="7" height="7" rx="1.5"/><rect x="14" y="14" width="7" height="7" rx="1.5"/>
+          </svg>
+        </span>
+        <span class="nav-label">Dashboard</span>
+      </div>
+
+      <div class="nav-item" onclick="showPage('billing')" id="nav-billing">
+        <span class="nav-icon-box" style="background:rgba(34,197,94,.13);color:#22c55e;border:1px solid rgba(34,197,94,.28)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M6 2L3 6v14a2 2 0 002 2h14a2 2 0 002-2V6l-3-4z"/><line x1="3" y1="6" x2="21" y2="6"/>
+            <path d="M16 10a4 4 0 01-8 0"/>
+          </svg>
+        </span>
+        <span class="nav-label">Billing</span>
+      </div>
+
+      <div class="nav-section-label">Inventory</div>
+
+      <div class="nav-item" onclick="showPage('products')" id="nav-products">
+        <span class="nav-icon-box" style="background:rgba(245,158,11,.13);color:#f59e0b;border:1px solid rgba(245,158,11,.28)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+            <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+          </svg>
+        </span>
+        <span class="nav-label">Products</span>
+      </div>
+
+      <div class="nav-section-label">Reports</div>
+
+      <div class="nav-item" onclick="showPage('sales')" id="nav-sales">
+        <span class="nav-icon-box" style="background:rgba(59,130,246,.13);color:#3b82f6;border:1px solid rgba(59,130,246,.28)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/>
+          </svg>
+        </span>
+        <span class="nav-label">Sales History</span>
+      </div>
+
+      <div class="nav-item" onclick="showPage('excel')" id="nav-excel">
+        <span class="nav-icon-box" style="background:rgba(16,185,129,.13);color:#10b981;border:1px solid rgba(16,185,129,.28)">
+          <svg width="15" height="15" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round">
+            <path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/>
+            <polyline points="14 2 14 8 20 8"/>
+            <line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/>
+            <line x1="8" y1="9" x2="10" y2="9"/>
+          </svg>
+        </span>
+        <span class="nav-label">Excel Export</span>
+      </div>
+    </nav>
+    <div class="sidebar-footer">
+      <div class="user-badge">
+        <div class="user-avatar" id="userAvatarSb">A</div>
+        <div>
+          <div class="user-name" id="userNameSb">Admin</div>
+          <div class="user-role" id="userRoleSb">Administrator</div>
+        </div>
+      </div>
+      <button class="btn btn-outline" style="width:100%;margin-top:12px;font-size:.8rem" onclick="logout()">Logout</button>
+      <button id="resetDataBtn" class="btn btn-danger" style="width:100%;margin-top:8px;font-size:.75rem;display:none" onclick="resetAllData()">🗑 Reset All Data</button>
+    </div>
+  </aside>
+
+  <!-- MAIN CONTENT -->
+  <main class="main">
+
+    <!-- ── DASHBOARD ── -->
+    <div class="page active" id="page-dashboard">
+      <div class="page-header">
+        <div class="page-title">Dashboard</div>
+        <div class="page-sub" id="dashDate"></div>
+      </div>
+      <div class="stat-grid">
+        <div class="stat-card">
+          <div class="stat-label">Today's Sales</div>
+          <div class="stat-value green" id="stat-today">₹0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Monthly Sales</div>
+          <div class="stat-value purple" id="stat-month">₹0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Bills</div>
+          <div class="stat-value" id="stat-bills">0</div>
+        </div>
+        <div class="stat-card">
+          <div class="stat-label">Total Products</div>
+          <div class="stat-value orange" id="stat-products">0</div>
+        </div>
+      </div>
+      <div class="card">
+        <div style="font-weight:600;margin-bottom:16px;font-family:var(--font-head)">Today's Bills</div>
+        <table>
+          <thead><tr>
+            <th>Bill ID</th><th>Items</th><th>Total</th><th>Time</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="todayBillsTable">
+            <tr><td colspan="5" class="no-data">No bills today</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── BILLING ── -->
+    <div class="page" id="page-billing">
+      <div class="page-header">
+        <div class="page-title">New Bill</div>
+        <div class="page-sub">Scan barcode or search product to add to bill</div>
+      </div>
+      <div class="billing-grid">
+        <div>
+          <!-- Scanner -->
+          <div class="scan-box" style="margin-bottom:16px">
+            <span class="scan-icon">📷</span>
+            <input type="text" id="scanInput" placeholder="Scan barcode / QR code here (connect USB scanner & scan)..." autofocus autocomplete="off" />
+            <button class="btn btn-primary" onclick="scanProduct()">Add</button>
+          </div>
+          <!-- Manual Search -->
+          <div class="card" style="margin-bottom:16px">
+            <div style="font-weight:600;margin-bottom:12px">Search & Add Product</div>
+            <div style="display:flex;gap:8px;margin-bottom:12px">
+              <input type="text" id="prodSearch" placeholder="Search by name or barcode..." oninput="searchForBill()" style="flex:1" />
+            </div>
+            <div id="searchResults"></div>
+          </div>
+          <!-- Discount -->
+          <div class="card">
+            <div style="font-weight:600;margin-bottom:12px">Discount</div>
+            <div class="disc-row">
+              <select id="discType">
+                <option value="percent">Percentage (%)</option>
+                <option value="flat">Flat (₹)</option>
+              </select>
+              <input type="number" id="discValue" placeholder="0" min="0" oninput="updateBillUI()" style="width:120px" />
+            </div>
+          </div>
+        </div>
+
+        <!-- Bill Panel -->
+        <div class="bill-panel">
+          <div class="bill-header">
+            <div>
+              <div style="font-weight:700;font-family:var(--font-head)">Current Bill</div>
+              <div class="bill-id" id="currentBillId">Bill #—</div>
+            </div>
+            <button class="btn btn-outline" style="font-size:.78rem" onclick="clearBill()">Clear</button>
+          </div>
+          <div class="bill-items" id="billItems">
+            <div class="no-data" style="padding:20px">No items added</div>
+          </div>
+          <div class="bill-summary">
+            <div class="summary-row"><span>Subtotal</span><span id="billSubtotal">₹0.00</span></div>
+            <div class="summary-row"><span>Discount</span><span id="billDiscount">-₹0.00</span></div>
+            <div class="summary-row grand"><span>Total</span><span id="billTotal">₹0.00</span></div>
+          </div>
+          <div class="bill-actions">
+            <button class="btn btn-outline" onclick="printBill()">🖨 Print</button>
+            <button class="btn btn-success" onclick="completeBill()">✓ Complete</button>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ── PRODUCTS ── -->
+    <div class="page" id="page-products">
+      <div class="top-bar">
+        <div>
+          <div class="page-title">Products</div>
+          <div class="page-sub">Manage your clothing inventory</div>
+        </div>
+        <button class="btn btn-primary" onclick="openProductModal()">+ Add Product</button>
+      </div>
+      <div class="search-bar">
+        <input type="text" id="productFilter" placeholder="Search products..." oninput="renderProducts()" style="max-width:360px" />
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr>
+            <th>Barcode</th><th>Name</th><th>Category</th><th>Size</th><th>Price</th><th>Stock</th><th>Status</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="productTable">
+            <tr><td colspan="8" class="no-data">No products added</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── SALES HISTORY ── -->
+    <div class="page" id="page-sales">
+      <div class="page-header">
+        <div class="page-title">Sales History</div>
+        <div class="page-sub">Browse past transactions</div>
+      </div>
+      <div style="display:flex;gap:10px;align-items:center;margin-bottom:20px;flex-wrap:wrap">
+        <div>
+          <label style="display:inline;margin-right:6px;color:var(--muted)">Date:</label>
+          <input type="date" id="filterDate" onchange="renderSales()" style="width:180px" />
+        </div>
+        <button class="btn btn-outline" onclick="document.getElementById('filterDate').value='';renderSales()">Clear Filter</button>
+      </div>
+      <div class="card">
+        <table>
+          <thead><tr>
+            <th>Bill ID</th><th>Date</th><th>Items</th><th>Subtotal</th><th>Discount</th><th>Total</th><th>Actions</th>
+          </tr></thead>
+          <tbody id="salesTable">
+            <tr><td colspan="7" class="no-data">No sales yet</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- ── EXCEL EXPORT ── -->
+    <div class="page" id="page-excel">
+      <div class="page-header">
+        <div class="page-title">Excel Export</div>
+        <div class="page-sub">Download or preview your data as live spreadsheets</div>
+      </div>
+
+      <!-- TOP EXPORT CARDS -->
+      <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:18px;margin-bottom:22px">
+
+        <!-- SALES REPORT CARD -->
+        <div class="xl-card">
+          <div class="xl-card-top" style="--xc:#6c63ff">
+            <div class="xl-icon-wrap" style="--xc:#6c63ff">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <line x1="18" y1="20" x2="18" y2="10"/><line x1="12" y1="20" x2="12" y2="4"/>
+                <line x1="6" y1="20" x2="6" y2="14"/>
+              </svg>
+            </div>
+            <div>
+              <div class="xl-card-title">Sales Report</div>
+              <div class="xl-card-sub">Bills &amp; transaction data</div>
+            </div>
+          </div>
+          <div style="display:flex;gap:6px;margin:12px 0 14px">
+            <input type="date" id="exportFrom" style="flex:1;font-size:.78rem;padding:7px 10px" placeholder="From" />
+            <input type="date" id="exportTo"   style="flex:1;font-size:.78rem;padding:7px 10px" placeholder="To" />
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="xl-btn xl-dl" onclick="exportSalesExcel()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </button>
+            <button class="xl-btn xl-view" onclick="viewExcel('sales')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Live View
+            </button>
+          </div>
+        </div>
+
+        <!-- PRODUCTS CARD -->
+        <div class="xl-card">
+          <div class="xl-card-top" style="--xc:#f59e0b">
+            <div class="xl-icon-wrap" style="--xc:#f59e0b">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <path d="M21 16V8a2 2 0 00-1-1.73l-7-4a2 2 0 00-2 0l-7 4A2 2 0 003 8v8a2 2 0 001 1.73l7 4a2 2 0 002 0l7-4A2 2 0 0021 16z"/>
+                <polyline points="3.27 6.96 12 12.01 20.73 6.96"/><line x1="12" y1="22.08" x2="12" y2="12"/>
+              </svg>
+            </div>
+            <div>
+              <div class="xl-card-title">Product Inventory</div>
+              <div class="xl-card-sub">Stock &amp; barcode list</div>
+            </div>
+          </div>
+          <div style="margin:12px 0 14px;color:var(--muted);font-size:.8rem;line-height:1.5">
+            Full product catalogue with prices, sizes, stock levels and barcodes.
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="xl-btn xl-dl" onclick="exportProductsExcel()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </button>
+            <button class="xl-btn xl-view" onclick="viewExcel('products')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Live View
+            </button>
+          </div>
+        </div>
+
+        <!-- SCAN LOG CARD -->
+        <div class="xl-card">
+          <div class="xl-card-top" style="--xc:#10b981">
+            <div class="xl-icon-wrap" style="--xc:#10b981">
+              <svg width="22" height="22" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round">
+                <rect x="3" y="11" width="18" height="11" rx="2" ry="2"/>
+                <path d="M7 11V7a5 5 0 0110 0v4"/>
+              </svg>
+            </div>
+            <div>
+              <div class="xl-card-title">Scan Log</div>
+              <div class="xl-card-sub">Every barcode scanned</div>
+            </div>
+          </div>
+          <div style="margin:12px 0 14px;color:var(--muted);font-size:.8rem;line-height:1.5">
+            Auto-logged record of all barcode scans with timestamps and bill references.
+          </div>
+          <div style="display:flex;gap:8px">
+            <button class="xl-btn xl-dl" onclick="exportScanLog()">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+              Download
+            </button>
+            <button class="xl-btn xl-view" onclick="viewExcel('scanlog')">
+              <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M1 12s4-8 11-8 11 8 11 8-4 8-11 8-11-8-11-8z"/><circle cx="12" cy="12" r="3"/></svg>
+              Live View
+            </button>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- LIVE SCAN LOG TABLE (always visible) -->
+      <div class="card">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:14px">
+          <div>
+            <div style="font-weight:600;font-family:var(--font-head);font-size:1rem">Scanned Items Log</div>
+            <div style="color:var(--muted);font-size:.78rem;margin-top:2px">Live — every scan auto-recorded below</div>
+          </div>
+          <button onclick="exportScanLog()" style="
+              display:inline-flex;align-items:center;gap:5px;
+              padding:5px 10px;border-radius:7px;border:1px solid #2a2a33;
+              background:#17171b;color:#c5c4dd;cursor:pointer;
+              font-size:.72rem;font-weight:600;font-family:var(--font-body);
+              transition:all .18s;white-space:nowrap"
+            onmouseover="this.style.borderColor='#6c63ff';this.style.color='#a78bfa'"
+            onmouseout="this.style.borderColor='#2a2a33';this.style.color='#c5c4dd'">
+            <svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+            Export
+          </button>
+        </div>
+        <table>
+          <thead><tr><th>Barcode</th><th>Product</th><th>Price</th><th>Scanned At</th><th>Bill ID</th></tr></thead>
+          <tbody id="scanLogTable">
+            <tr><td colspan="5" class="no-data">No scans logged</td></tr>
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+  </main>
+</div>
+</div>
+
+<!-- ════════ PRODUCT MODAL ════════ -->
+<div class="modal-overlay" id="productModal">
+  <div class="modal">
+    <div class="modal-title" id="modalTitle">Add Product</div>
+
+    <!-- ── SCAN TO AUTO-FILL BARCODE ── -->
+    <div class="scan-strip" id="modalScanStrip">
+      <span class="scan-strip-icon">🔫</span>
+      <input type="text" id="modalScanInput"
+        placeholder="Scan barcode to auto-fill below..."
+        autocomplete="off"
+        oninput="onModalScan(this.value)"
+        onkeydown="if(event.key==='Enter'){onModalScanEnter();}" />
+      <span class="scan-strip-status waiting" id="scanStripStatus">Ready to scan</span>
+    </div>
+
+    <div class="form-grid">
+      <div class="form-group">
+        <label>Product Name *</label>
+        <input type="text" id="pName" placeholder="e.g. Classic White T-Shirt" />
+      </div>
+      <div class="form-group">
+        <label>Barcode / QR Code *</label>
+        <input type="text" id="pBarcode" placeholder="Scan or type barcode" />
+      </div>
+      <div class="form-group">
+        <label>Category</label>
+        <select id="pCategory">
+          <option>T-Shirt</option><option>Shirt</option><option>Trousers</option>
+          <option>Jeans</option><option>Jacket</option><option>Dress</option>
+          <option>Skirt</option><option>Saree</option><option>Kurta</option><option>Other</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Size</label>
+        <select id="pSize">
+          <option>XS</option><option>S</option><option>M</option>
+          <option>L</option><option>XL</option><option>XXL</option><option>Free Size</option>
+        </select>
+      </div>
+      <div class="form-group">
+        <label>Price (₹) *</label>
+        <input type="number" id="pPrice" placeholder="0.00" min="0" step="0.01" />
+      </div>
+      <div class="form-group">
+        <label>Stock Quantity</label>
+        <input type="number" id="pStock" placeholder="0" min="0" />
+      </div>
+      <div class="form-group full">
+        <label>Description</label>
+        <textarea id="pDesc" rows="2" placeholder="Optional description"></textarea>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeProductModal()">Cancel</button>
+      <button class="btn btn-primary" onclick="saveProduct()">Save Product</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ BILL DETAIL MODAL ════════ -->
+<div class="modal-overlay" id="billModal">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title">Bill Details</div>
+    <div id="billModalContent"></div>
+    <div class="modal-actions">
+      <button class="btn btn-outline" onclick="closeBillModal()">Close</button>
+      <button class="btn btn-primary" onclick="printModalBill()">🖨 Print</button>
+    </div>
+  </div>
+</div>
+
+<!-- ════════ LIVE EXCEL VIEW MODAL ════════ -->
+<div class="xlv-overlay" id="xlvModal">
+  <div class="xlv-modal">
+    <div class="xlv-head">
+      <div class="xlv-head-left">
+        <div class="xlv-icon" id="xlvIcon">
+          <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><polyline points="14 2 14 8 20 8"/><line x1="8" y1="13" x2="16" y2="13"/><line x1="8" y1="17" x2="16" y2="17"/><line x1="8" y1="9" x2="10" y2="9"/></svg>
+        </div>
+        <div>
+          <div class="xlv-title" id="xlvTitle">Live View</div>
+          <div class="xlv-subtitle" id="xlvSubtitle">Spreadsheet Preview</div>
+        </div>
+      </div>
+      <button class="xlv-close" onclick="closeXlv()">✕</button>
+    </div>
+    <div class="xlv-tabs" id="xlvTabs"></div>
+    <div class="xlv-body">
+      <div class="xlv-sheet-wrap">
+        <table class="xlv-sheet" id="xlvTable"></table>
+      </div>
+    </div>
+    <div class="xlv-foot">
+      <span id="xlvRowCount">0 rows</span>
+      <div class="xlv-foot-btns">
+        <button class="xl-btn xl-view" onclick="closeXlv()">Close</button>
+        <button class="xl-btn xl-dl" id="xlvDlBtn">
+          <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round"><path d="M21 15v4a2 2 0 01-2 2H5a2 2 0 01-2-2v-4"/><polyline points="7 10 12 15 17 10"/><line x1="12" y1="15" x2="12" y2="3"/></svg>
+          Download
+        </button>
+      </div>
+    </div>
+  </div>
+</div>
+
+<!-- PRINT AREA -->
+<div id="printArea"></div>
+
+<!-- TOAST -->
+<div id="toast"></div>
+
+<script>
+// ╔══════════════════════════════════════════════════════════════╗
+// ║              VENTUS CLOTHING — IndexedDB Layer               ║
+// ║  Replaces localStorage. ~1 GB limit. Same API surface.       ║
+// ╚══════════════════════════════════════════════════════════════╝
+
+const IDB_NAME    = 'ventusDB';
+const IDB_VERSION = 1;
+const STORES      = ['products', 'sales', 'scanLog'];
+
+let _db = null; // holds the open IDBDatabase
+
+/* ── open / upgrade ─────────────────────────────────────────── */
+function openDB() {
+  return new Promise((resolve, reject) => {
+    const req = indexedDB.open(IDB_NAME, IDB_VERSION);
+
+    req.onupgradeneeded = e => {
+      const db = e.target.result;
+      // create a key-value store (keyPath = 'k') for each collection
+      STORES.forEach(name => {
+        if (!db.objectStoreNames.contains(name)) {
+          db.createObjectStore(name, { keyPath: 'k' });
+        }
+      });
+    };
+
+    req.onsuccess = e => { _db = e.target.result; resolve(_db); };
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+/* ── read one key from a store ──────────────────────────────── */
+function idbGet(store, key) {
+  return new Promise((resolve, reject) => {
+    const tx  = _db.transaction(store, 'readonly');
+    const req = tx.objectStore(store).get(key);
+    req.onsuccess = () => resolve(req.result ? req.result.v : null);
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+/* ── write one key to a store ───────────────────────────────── */
+function idbSet(store, key, value) {
+  return new Promise((resolve, reject) => {
+    const tx  = _db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).put({ k: key, v: value });
+    req.onsuccess = () => resolve();
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+/* ── delete one key ─────────────────────────────────────────── */
+function idbDel(store, key) {
+  return new Promise((resolve, reject) => {
+    const tx  = _db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).delete(key);
+    req.onsuccess = () => resolve();
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+/* ── clear an entire store ──────────────────────────────────── */
+function idbClear(store) {
+  return new Promise((resolve, reject) => {
+    const tx  = _db.transaction(store, 'readwrite');
+    const req = tx.objectStore(store).clear();
+    req.onsuccess = () => resolve();
+    req.onerror   = e => reject(e.target.error);
+  });
+}
+
+// ═══════════════════════════════════════════
+//  APP STATE  (in-memory, synced to IndexedDB)
+// ═══════════════════════════════════════════
+let products = [];
+let sales    = [];
+let scanLog  = [];
+let currentUser = null;
+
+const USERS = {
+  admin:    { pass: 'admin123', role: 'admin',    name: 'Admin' },
+  rinshad: { pass: 'rinshad123',   role: 'employee', name: 'Rinshad' },
+};
+
+let currentBill = { items: [], id: generateBillId() };
+
+// ═══════ UTILS ═══════
+function generateBillId() {
+  const d = new Date();
+  return 'V' + d.getFullYear().toString().slice(-2) +
+    String(d.getMonth()+1).padStart(2,'0') +
+    String(d.getDate()).padStart(2,'0') + '-' +
+    Math.floor(Math.random()*9000+1000);
+}
+function fmt(n)     { return '₹' + parseFloat(n||0).toFixed(2); }
+function fmtDate(iso) { return new Date(iso).toLocaleDateString('en-IN',  { day:'2-digit', month:'short', year:'numeric' }); }
+function fmtTime(iso) { return new Date(iso).toLocaleTimeString('en-IN',  { hour:'2-digit', minute:'2-digit' }); }
+
+function toast(msg, err) {
+  const t = document.getElementById('toast');
+  t.textContent = msg;
+  t.className = 'show' + (err ? ' error' : '');
+  setTimeout(() => t.className = '', 2800);
+}
+
+/* ── persist all three collections to IndexedDB ─────────────── */
+async function save() {
+  await Promise.all([
+    idbSet('products', 'data', products),
+    idbSet('sales',    'data', sales),
+    idbSet('scanLog',  'data', scanLog),
+  ]);
+}
+
+/* ── wipe everything (admin reset) ─────────────────────────── */
+async function resetAllData() {
+  if (!confirm('⚠️ This will permanently delete ALL products, sales and scan logs.\n\nType YES in the next prompt to confirm.')) return;
+  const typed = prompt('Type YES to confirm full reset:');
+  if (typed !== 'YES') { toast('Reset cancelled'); return; }
+  await Promise.all(STORES.map(s => idbClear(s)));
+  products = []; sales = []; scanLog = [];
+  renderProducts(); renderSales(); renderScanLog(); refreshDashboard();
+  toast('All data has been reset');
+}
+
+// ═══════════════════════════════════════════
+//  BOOT — open DB, load data, then init UI
+// ═══════════════════════════════════════════
+async function bootApp() {
+  // Show a tiny loading state while DB opens
+  document.getElementById('loginScreen').innerHTML = `
+    <div style="text-align:center;color:#8b8b9e;font-family:'Space Grotesk',sans-serif">
+      <div style="font-size:2rem;margin-bottom:12px">👕</div>
+      <div style="font-size:1rem;font-weight:600;color:#a78bfa">Ventus Clothing</div>
+      <div style="font-size:.8rem;margin-top:6px">Opening database…</div>
+    </div>`;
+
+  try {
+    await openDB();
+  } catch(e) {
+    document.getElementById('loginScreen').innerHTML =
+      `<div style="color:#ef4444;text-align:center;padding:40px">
+         Failed to open IndexedDB: ${e.message}<br/>
+         <small>Make sure you're not in private/incognito mode.</small>
+       </div>`;
+    return;
+  }
+
+  // Load persisted data into memory
+  products = (await idbGet('products', 'data')) || [];
+  sales    = (await idbGet('sales',    'data')) || [];
+  scanLog  = (await idbGet('scanLog',  'data')) || [];
+
+  // Seed sample products only on very first run
+  if (!products.length) {
+    products = [
+      { id:1, barcode:'VC-001', name:'Classic White T-Shirt', category:'T-Shirt', size:'M',  price:299,  stock:50, desc:'Premium cotton' },
+      { id:2, barcode:'VC-002', name:'Blue Denim Jeans',      category:'Jeans',   size:'32', price:1299, stock:20, desc:'Slim fit' },
+      { id:3, barcode:'VC-003', name:'Floral Summer Dress',   category:'Dress',   size:'S',  price:799,  stock:15, desc:'Chiffon fabric' },
+      { id:4, barcode:'VC-004', name:'Striped Polo Shirt',    category:'Shirt',   size:'L',  price:499,  stock:30, desc:'Regular fit' },
+      { id:5, barcode:'VC-005', name:'Black Hoodie',          category:'Jacket',  size:'XL', price:899,  stock:25, desc:'Fleece lined' },
+    ];
+    await save();
+  }
+
+  // Restore real login screen HTML
+  document.getElementById('loginScreen').innerHTML = `
+    <div class="login-box">
+      <div class="login-logo">Ventus <span style="color:var(--accent)">●</span></div>
+      <p class="login-sub">Clothing POS System</p>
+      <div class="tab-row">
+        <button class="tab-btn active" onclick="setRole('admin')">Admin</button>
+        <button class="tab-btn" onclick="setRole('employee')">Employee</button>
+      </div>
+      <label>Username</label>
+      <input type="text" id="loginUser" placeholder="admin / employee" />
+      <label>Password</label>
+      <input type="password" id="loginPass" placeholder="••••••"
+             onkeydown="if(event.key==='Enter')doLogin()" />
+      <button class="btn btn-primary btn-full" onclick="doLogin()">Sign In →</button>
+    </div>`;
+
+  // Re-bind barcode scanner listener after DOM rebuild
+  document.getElementById('loginUser').focus();
+}
+
+// ═══════ AUTH ═══════
+let loginRole = 'admin';
+function setRole(r) {
+  loginRole = r;
+  document.querySelectorAll('.tab-btn').forEach((b,i) =>
+    b.classList.toggle('active', (i===0&&r==='admin')||(i===1&&r==='employee')));
+}
+
+function doLogin() {
+  const u = document.getElementById('loginUser').value.trim();
+  const p = document.getElementById('loginPass').value;
+  const user = USERS[u];
+  if (!user || user.pass !== p || user.role !== loginRole)
+    return toast('Invalid credentials', true);
+
+  currentUser = { username: u, ...user };
+  document.getElementById('loginScreen').style.display = 'none';
+  document.getElementById('app').style.display         = 'block';
+  document.getElementById('userAvatarSb').textContent  = user.name[0].toUpperCase();
+  document.getElementById('userNameSb').textContent    = user.name;
+  document.getElementById('userRoleSb').textContent    = user.role === 'admin' ? 'Administrator' : 'Sales Employee';
+
+  // Hide admin-only nav items for employee
+  if (user.role === 'employee') {
+    document.getElementById('nav-products').style.display = 'none';
+    document.getElementById('nav-excel').style.display    = 'none';
+  }
+  // Show reset button only for admin
+  if (user.role === 'admin') {
+    document.getElementById('resetDataBtn').style.display = 'block';
+  }
+
+  // Re-bind barcode scanner (DOM was available at login already)
+  const si = document.getElementById('scanInput');
+  if (si) si.addEventListener('keydown', e => { if (e.key === 'Enter') scanProduct(); });
+
+  refreshDashboard();
+  const dashBox = document.querySelector('#nav-dashboard .nav-icon-box');
+  if (dashBox) {
+    dashBox.style.background = '#6c63ff'; dashBox.style.color = '#fff';
+    dashBox.style.border = 'none'; dashBox.style.boxShadow = '0 4px 12px #6c63ff66';
+  }
+  document.getElementById('currentBillId').textContent = 'Bill #' + currentBill.id;
+  document.getElementById('dashDate').textContent = new Date().toLocaleDateString('en-IN',
+    { weekday:'long', year:'numeric', month:'long', day:'numeric' });
+}
+
+function logout() {
+  closeSidebar();
+  currentUser = null;
+  document.getElementById('loginScreen').style.display = 'flex';
+  document.getElementById('app').style.display         = 'none';
+  document.getElementById('loginUser').value           = '';
+  document.getElementById('loginPass').value           = '';
+  document.getElementById('resetDataBtn').style.display = 'none';
+}
+
+// ═══════ SIDEBAR TOGGLE (mobile) ═══════
+function toggleSidebar() {
+  const sb  = document.querySelector('.sidebar');
+  const bd  = document.getElementById('sidebarBackdrop');
+  const hb  = document.getElementById('hamburger');
+  const open = sb.classList.toggle('open');
+  bd.classList.toggle('show', open);
+  hb.classList.toggle('open', open);
+}
+function closeSidebar() {
+  document.querySelector('.sidebar').classList.remove('open');
+  document.getElementById('sidebarBackdrop').classList.remove('show');
+  document.getElementById('hamburger').classList.remove('open');
+}
+
+// ═══════ NAVIGATION ═══════
+const NAV_COLORS = {
+  dashboard: '#6c63ff', billing: '#22c55e',
+  products:  '#f59e0b', sales:   '#3b82f6', excel: '#10b981',
+};
+function showPage(name) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => {
+    n.classList.remove('active');
+    const box = n.querySelector('.nav-icon-box');
+    if (box) { box.style.background=''; box.style.color=''; box.style.border=''; box.style.boxShadow=''; }
+  });
+  const navEl = document.getElementById('nav-' + name);
+  navEl.classList.add('active');
+  const clr = NAV_COLORS[name] || '#6c63ff';
+  const activeBox = navEl.querySelector('.nav-icon-box');
+  if (activeBox) {
+    activeBox.style.background = clr; activeBox.style.color = '#fff';
+    activeBox.style.border = 'none'; activeBox.style.boxShadow = `0 4px 12px ${clr}66`;
+  }
+  document.getElementById('page-' + name).classList.add('active');
+  // close sidebar on mobile after navigation
+  if (window.innerWidth < 768) closeSidebar();
+  if (name === 'dashboard') refreshDashboard();
+  if (name === 'products')  renderProducts();
+  if (name === 'sales')     renderSales();
+  if (name === 'excel')     renderScanLog();
+  if (name === 'billing')   setTimeout(() => document.getElementById('scanInput').focus(), 100);
+}
+
+// ═══════ PRODUCTS ═══════
+let editingProductIdx = null;
+
+function openProductModal(idx) {
+  editingProductIdx = idx != null ? idx : null;
+  document.getElementById('productModal').classList.add('open');
+  document.getElementById('modalScanInput').value = '';
+  document.getElementById('scanStripStatus').textContent = 'Ready to scan';
+  document.getElementById('scanStripStatus').className = 'scan-strip-status waiting';
+  if (idx != null) {
+    const p = products[idx];
+    document.getElementById('modalTitle').textContent   = 'Edit Product';
+    document.getElementById('pName').value              = p.name;
+    document.getElementById('pBarcode').value           = p.barcode;
+    document.getElementById('pCategory').value          = p.category;
+    document.getElementById('pSize').value              = p.size;
+    document.getElementById('pPrice').value             = p.price;
+    document.getElementById('pStock').value             = p.stock;
+    document.getElementById('pDesc').value              = p.desc || '';
+  } else {
+    document.getElementById('modalTitle').textContent = 'Add Product';
+    ['pName','pBarcode','pPrice','pStock','pDesc'].forEach(id => document.getElementById(id).value = '');
+    setTimeout(() => document.getElementById('modalScanInput').focus(), 100);
+  }
+}
+
+function closeProductModal() {
+  document.getElementById('productModal').classList.remove('open');
+  document.getElementById('modalScanInput').value = '';
+  document.getElementById('scanStripStatus').textContent = 'Ready to scan';
+  document.getElementById('scanStripStatus').className = 'scan-strip-status waiting';
+}
+
+// ── SCAN-TO-ADD in modal ──
+let scanDebounce = null;
+function onModalScan(val) {
+  clearTimeout(scanDebounce);
+  const s = document.getElementById('scanStripStatus');
+  if (!val) { s.textContent='Ready to scan'; s.className='scan-strip-status waiting'; return; }
+  s.textContent='Scanning…'; s.className='scan-strip-status waiting';
+  scanDebounce = setTimeout(() => fillProductFromBarcode(val), 400);
+}
+function onModalScanEnter() {
+  clearTimeout(scanDebounce);
+  const val = document.getElementById('modalScanInput').value.trim();
+  if (val) fillProductFromBarcode(val);
+}
+function fillProductFromBarcode(barcode) {
+  const s = document.getElementById('scanStripStatus');
+  document.getElementById('pBarcode').value = barcode;
+  const existing = products.find(p => p.barcode === barcode);
+  if (existing) {
+    if (editingProductIdx === null) {
+      editingProductIdx = products.indexOf(existing);
+      document.getElementById('modalTitle').textContent = 'Edit Product (Barcode matched)';
+      document.getElementById('pName').value     = existing.name;
+      document.getElementById('pBarcode').value  = existing.barcode;
+      document.getElementById('pCategory').value = existing.category;
+      document.getElementById('pSize').value     = existing.size;
+      document.getElementById('pPrice').value    = existing.price;
+      document.getElementById('pStock').value    = existing.stock;
+      document.getElementById('pDesc').value     = existing.desc || '';
+    }
+    s.textContent='✓ Product found — editing'; s.className='scan-strip-status found';
+    toast('Barcode matched: ' + existing.name);
+  } else {
+    s.textContent='+ New barcode — fill details'; s.className='scan-strip-status notfound';
+    setTimeout(() => document.getElementById('pName').focus(), 50);
+  }
+  document.getElementById('modalScanInput').value = '';
+}
+
+async function saveProduct() {
+  const name    = document.getElementById('pName').value.trim();
+  const barcode = document.getElementById('pBarcode').value.trim();
+  const price   = parseFloat(document.getElementById('pPrice').value);
+  if (!name || !barcode || isNaN(price)) return toast('Fill required fields', true);
+  const prod = {
+    name, barcode,
+    category: document.getElementById('pCategory').value,
+    size:     document.getElementById('pSize').value,
+    price,
+    stock: parseInt(document.getElementById('pStock').value) || 0,
+    desc:  document.getElementById('pDesc').value,
+    id:    editingProductIdx != null ? products[editingProductIdx].id : Date.now(),
+  };
+  if (editingProductIdx != null) products[editingProductIdx] = prod;
+  else products.push(prod);
+  await save();
+  renderProducts(); closeProductModal();
+  toast(editingProductIdx != null ? 'Product updated!' : 'Product added!');
+  refreshDashboard();
+}
+
+async function deleteProduct(idx) {
+  if (!confirm('Delete this product?')) return;
+  products.splice(idx, 1);
+  await save();
+  renderProducts(); refreshDashboard();
+  toast('Product deleted');
+}
+
+function renderProducts() {
+  const q     = (document.getElementById('productFilter').value||'').toLowerCase();
+  const tbody = document.getElementById('productTable');
+  const filtered = products.filter(p =>
+    p.name.toLowerCase().includes(q) || p.barcode.toLowerCase().includes(q));
+  if (!filtered.length) {
+    tbody.innerHTML = '<tr><td colspan="8" class="no-data">No products found</td></tr>'; return;
+  }
+  tbody.innerHTML = filtered.map(p => {
+    const idx        = products.indexOf(p);
+    const stockBadge = p.stock===0?'badge-red':p.stock<5?'badge-yellow':'badge-green';
+    const stockLabel = p.stock===0?'Out of Stock':p.stock<5?'Low Stock':'In Stock';
+    return `<tr>
+      <td><code style="font-size:.78rem;color:var(--accent2)">${p.barcode}</code></td>
+      <td><div style="font-weight:500">${p.name}</div><div style="font-size:.75rem;color:var(--muted)">${p.desc||''}</div></td>
+      <td>${p.category}</td>
+      <td><span class="badge badge-yellow">${p.size}</span></td>
+      <td style="font-weight:600">${fmt(p.price)}</td>
+      <td>${p.stock}</td>
+      <td><span class="badge ${stockBadge}">${stockLabel}</span></td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-outline" style="font-size:.75rem;padding:5px 10px" onclick="openProductModal(${idx})">Edit</button>
+        <button class="btn btn-danger"  style="font-size:.75rem;padding:5px 10px" onclick="deleteProduct(${idx})">Del</button>
+      </td>
+    </tr>`;
+  }).join('');
+}
+
+// ═══════ BILLING ═══════
+function scanProduct() {
+  const val = document.getElementById('scanInput').value.trim();
+  if (!val) return;
+  addProductToBillByBarcode(val);
+  document.getElementById('scanInput').value = '';
+  document.getElementById('scanInput').focus();
+}
+
+async function addProductToBillByBarcode(barcode) {
+  const prod = products.find(p => p.barcode === barcode);
+  if (!prod) { toast('Product not found: ' + barcode, true); return; }
+  addToBill(prod);
+  scanLog.push({ barcode:prod.barcode, name:prod.name, price:prod.price,
+                 scannedAt:new Date().toISOString(), billId:currentBill.id });
+  await save();
+}
+
+function addToBill(prod) {
+  const existing = currentBill.items.find(i => i.barcode === prod.barcode);
+  if (existing) existing.qty++;
+  else currentBill.items.push({ ...prod, qty: 1 });
+  updateBillUI();
+  toast(prod.name + ' added');
+}
+
+function updateBillUI() {
+  const container = document.getElementById('billItems');
+  if (!currentBill.items.length) {
+    container.innerHTML = '<div class="no-data" style="padding:20px">No items added</div>';
+    document.getElementById('billSubtotal').textContent = fmt(0);
+    document.getElementById('billDiscount').textContent = '-' + fmt(0);
+    document.getElementById('billTotal').textContent    = fmt(0);
+    return;
+  }
+  container.innerHTML = currentBill.items.map((item, i) => `
+    <div class="bill-item">
+      <div class="item-info">
+        <div class="item-name">${item.name}</div>
+        <div class="item-meta">${item.size} · ${fmt(item.price)} each</div>
+      </div>
+      <div class="qty-ctrl">
+        <button class="qty-btn" onclick="changeQty(${i},-1)">−</button>
+        <span class="qty-num">${item.qty}</span>
+        <button class="qty-btn" onclick="changeQty(${i},1)">+</button>
+      </div>
+      <div class="item-total">${fmt(item.price * item.qty)}</div>
+      <button onclick="removeFromBill(${i})"
+        style="background:none;border:none;color:var(--danger);cursor:pointer;font-size:1.1rem;padding:0 4px">×</button>
+    </div>`).join('');
+
+  const subtotal = currentBill.items.reduce((s, i) => s + i.price * i.qty, 0);
+  const discType = document.getElementById('discType').value;
+  const discVal  = parseFloat(document.getElementById('discValue').value) || 0;
+  const discount = discType==='percent' ? subtotal*discVal/100 : Math.min(discVal,subtotal);
+  const total    = subtotal - discount;
+  document.getElementById('billSubtotal').textContent = fmt(subtotal);
+  document.getElementById('billDiscount').textContent = '-' + fmt(discount);
+  document.getElementById('billTotal').textContent    = fmt(total);
+}
+
+function changeQty(i, d) {
+  currentBill.items[i].qty += d;
+  if (currentBill.items[i].qty <= 0) currentBill.items.splice(i, 1);
+  updateBillUI();
+}
+function removeFromBill(i) { currentBill.items.splice(i, 1); updateBillUI(); }
+function clearBill() {
+  currentBill = { items: [], id: generateBillId() };
+  updateBillUI();
+  document.getElementById('currentBillId').textContent = 'Bill #' + currentBill.id;
+  document.getElementById('discValue').value = '';
+}
+
+async function completeBill() {
+  if (!currentBill.items.length) { toast('No items in bill', true); return; }
+  const subtotal = currentBill.items.reduce((s, i) => s + i.price * i.qty, 0);
+  const discType = document.getElementById('discType').value;
+  const discVal  = parseFloat(document.getElementById('discValue').value) || 0;
+  const discount = discType==='percent' ? subtotal*discVal/100 : Math.min(discVal,subtotal);
+  const total    = subtotal - discount;
+
+  const bill = {
+    id: currentBill.id,
+    items: [...currentBill.items],
+    subtotal, discount, total, discType, discVal,
+    createdAt:  new Date().toISOString(),
+    createdBy:  currentUser.username,
+  };
+  // Reduce stock
+  bill.items.forEach(bi => {
+    const p = products.find(p => p.barcode === bi.barcode);
+    if (p) p.stock = Math.max(0, p.stock - bi.qty);
+  });
+  sales.push(bill);
+  await save();
+  toast('Bill ' + bill.id + ' completed! ₹' + total.toFixed(2));
+  clearBill();
+  refreshDashboard();
+}
+
+function searchForBill() {
+  const q   = document.getElementById('prodSearch').value.toLowerCase();
+  const res = document.getElementById('searchResults');
+  if (!q) { res.innerHTML = ''; return; }
+  const found = products.filter(p => p.name.toLowerCase().includes(q) || p.barcode.toLowerCase().includes(q));
+  if (!found.length) { res.innerHTML='<div style="color:var(--muted);font-size:.85rem;padding:8px">No products found</div>'; return; }
+  res.innerHTML = found.map(p => `
+    <div style="display:flex;justify-content:space-between;align-items:center;padding:10px 0;border-bottom:1px solid var(--border)">
+      <div>
+        <div style="font-weight:500">${p.name}</div>
+        <div style="font-size:.75rem;color:var(--muted)">${p.barcode} · ${p.size} · Stock: ${p.stock}</div>
+      </div>
+      <div style="display:flex;align-items:center;gap:10px">
+        <span style="font-weight:600">${fmt(p.price)}</span>
+        <button class="btn btn-primary" style="font-size:.78rem;padding:5px 12px"
+          onclick='addToBill(${JSON.stringify(p)})'>Add</button>
+      </div>
+    </div>`).join('');
+}
+
+// ═══════ PRINTING ═══════
+let printBillData = null;
+function buildPrintHTML(bill) {
+  return `
+    <div style="font-family:monospace;width:80mm;padding:10px;font-size:11px">
+      <div style="text-align:center;margin-bottom:8px">
+        <b style="font-size:16px">VENTUS CLOTHING</b><br/>Your Style, Our Passion<br/>
+        ================================
+      </div>
+      <div>Bill No : ${bill.id}</div>
+      <div>Date    : ${fmtDate(bill.createdAt)}</div>
+      <div>Time    : ${fmtTime(bill.createdAt)}</div>
+      <div>By      : ${bill.createdBy}</div>
+      <div>================================</div>
+      ${bill.items.map(i=>`
+        <div>${i.name} (${i.size})</div>
+        <div style="display:flex;justify-content:space-between">
+          <span>${i.qty} x ${fmt(i.price)}</span><span>${fmt(i.price*i.qty)}</span>
+        </div>`).join('<div>--------------------------------</div>')}
+      <div>================================</div>
+      <div style="display:flex;justify-content:space-between"><span>Subtotal</span><span>${fmt(bill.subtotal)}</span></div>
+      <div style="display:flex;justify-content:space-between"><span>Discount</span><span>-${fmt(bill.discount)}</span></div>
+      <div style="display:flex;justify-content:space-between;font-weight:bold"><span>TOTAL</span><span>${fmt(bill.total)}</span></div>
+      <div>================================</div>
+      <div style="text-align:center;margin-top:8px">Thank you for shopping!<br/>Visit us again 🙏</div>
+    </div>`;
+}
+function printBill() {
+  if (!currentBill.items.length) { toast('No items to print', true); return; }
+  const subtotal = currentBill.items.reduce((s,i)=>s+i.price*i.qty,0);
+  const discVal  = parseFloat(document.getElementById('discValue').value)||0;
+  const discType = document.getElementById('discType').value;
+  const discount = discType==='percent'?subtotal*discVal/100:Math.min(discVal,subtotal);
+  doPrint({ id:currentBill.id, items:currentBill.items, subtotal, discount,
+            total:subtotal-discount, createdAt:new Date().toISOString(), createdBy:currentUser.username });
+}
+function printModalBill() { if (printBillData) doPrint(printBillData); closeBillModal(); }
+function doPrint(bill) {
+  const area = document.getElementById('printArea');
+  area.innerHTML = buildPrintHTML(bill);
+  area.style.display = 'block';
+  setTimeout(() => { window.print(); area.style.display = 'none'; }, 200);
+}
+
+// ═══════ DASHBOARD ═══════
+function refreshDashboard() {
+  const today = new Date().toDateString();
+  const month = new Date().getMonth();
+  const year  = new Date().getFullYear();
+  const todaySales = sales.filter(s => new Date(s.createdAt).toDateString() === today);
+  const monthSales = sales.filter(s => { const d=new Date(s.createdAt); return d.getMonth()===month && d.getFullYear()===year; });
+  document.getElementById('stat-today').textContent    = fmt(todaySales.reduce((s,b)=>s+b.total,0));
+  document.getElementById('stat-month').textContent    = fmt(monthSales.reduce((s,b)=>s+b.total,0));
+  document.getElementById('stat-bills').textContent    = sales.length;
+  document.getElementById('stat-products').textContent = products.length;
+  const tbody = document.getElementById('todayBillsTable');
+  if (!todaySales.length) { tbody.innerHTML='<tr><td colspan="5" class="no-data">No bills today</td></tr>'; return; }
+  tbody.innerHTML = [...todaySales].reverse().map(b=>`
+    <tr>
+      <td><code style="color:var(--accent2)">${b.id}</code></td>
+      <td>${b.items.length} item(s)</td>
+      <td style="font-weight:600;color:var(--success)">${fmt(b.total)}</td>
+      <td>${fmtTime(b.createdAt)}</td>
+      <td><button class="btn btn-outline" style="font-size:.75rem;padding:4px 10px" onclick="viewBill('${b.id}')">View</button></td>
+    </tr>`).join('');
+}
+
+// ═══════ SALES ═══════
+function renderSales() {
+  const filterDate = document.getElementById('filterDate').value;
+  const tbody      = document.getElementById('salesTable');
+  let filtered = [...sales].reverse();
+  if (filterDate) filtered = filtered.filter(s => s.createdAt.startsWith(filterDate));
+  if (!filtered.length) { tbody.innerHTML='<tr><td colspan="7" class="no-data">No sales found</td></tr>'; return; }
+  tbody.innerHTML = filtered.map(b=>`
+    <tr>
+      <td><code style="color:var(--accent2)">${b.id}</code></td>
+      <td>${fmtDate(b.createdAt)}</td>
+      <td>${b.items.length} item(s)</td>
+      <td>${fmt(b.subtotal)}</td>
+      <td style="color:var(--danger)">-${fmt(b.discount)}</td>
+      <td style="font-weight:600;color:var(--success)">${fmt(b.total)}</td>
+      <td style="display:flex;gap:6px">
+        <button class="btn btn-outline" style="font-size:.75rem;padding:4px 10px" onclick="viewBill('${b.id}')">View</button>
+        <button class="btn btn-outline" style="font-size:.75rem;padding:4px 10px" onclick="reprintBill('${b.id}')">🖨</button>
+      </td>
+    </tr>`).join('');
+}
+
+function viewBill(id) {
+  const bill = sales.find(b => b.id === id);
+  if (!bill) return;
+  printBillData = bill;
+  document.getElementById('billModalContent').innerHTML = `
+    <div style="background:var(--surface);border-radius:10px;padding:16px;font-size:.88rem">
+      <div style="display:flex;justify-content:space-between;margin-bottom:12px">
+        <div><span style="color:var(--muted)">Bill ID:</span> <b>${bill.id}</b></div>
+        <div><span style="color:var(--muted)">Date:</span> ${fmtDate(bill.createdAt)}</div>
+      </div>
+      <table style="width:100%">
+        <thead><tr><th>Item</th><th>Size</th><th>Qty</th><th>Price</th><th>Total</th></tr></thead>
+        <tbody>${bill.items.map(i=>`
+          <tr><td>${i.name}</td><td>${i.size}</td><td>${i.qty}</td>
+              <td>${fmt(i.price)}</td><td>${fmt(i.price*i.qty)}</td></tr>`).join('')}
+        </tbody>
+      </table>
+      <div style="margin-top:14px;border-top:1px solid var(--border);padding-top:12px">
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Subtotal</span><span>${fmt(bill.subtotal)}</span></div>
+        <div style="display:flex;justify-content:space-between"><span style="color:var(--muted)">Discount</span><span style="color:var(--danger)">-${fmt(bill.discount)}</span></div>
+        <div style="display:flex;justify-content:space-between;font-weight:700;font-size:1rem;margin-top:8px">
+          <span>Total</span><span style="color:var(--success)">${fmt(bill.total)}</span>
+        </div>
+      </div>
+    </div>`;
+  document.getElementById('billModal').classList.add('open');
+}
+function closeBillModal() { document.getElementById('billModal').classList.remove('open'); printBillData=null; }
+function reprintBill(id)  { const b=sales.find(b=>b.id===id); if(b) doPrint(b); }
+
+// ═══════ EXCEL EXPORT ═══════
+function exportSalesExcel() {
+  const from = document.getElementById('exportFrom').value;
+  const to   = document.getElementById('exportTo').value;
+  let data = sales;
+  if (from) data = data.filter(s => s.createdAt >= from);
+  if (to)   data = data.filter(s => s.createdAt <= to+'T23:59:59');
+  const rows = [['Bill ID','Date','Time','Items Count','Subtotal','Discount','Total','Created By']];
+  data.forEach(b => rows.push([b.id,fmtDate(b.createdAt),fmtTime(b.createdAt),b.items.length,b.subtotal,b.discount,b.total,b.createdBy]));
+  const itemRows = [['Bill ID','Date','Product','Barcode','Size','Qty','Unit Price','Line Total']];
+  data.forEach(b => b.items.forEach(i => itemRows.push([b.id,fmtDate(b.createdAt),i.name,i.barcode,i.size,i.qty,i.price,i.price*i.qty])));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows),     'Sales Summary');
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(itemRows), 'Sales Items');
+  XLSX.writeFile(wb, 'ventus_sales_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  toast('Sales Excel downloaded!');
+}
+function exportProductsExcel() {
+  const rows = [['Barcode','Name','Category','Size','Price','Stock','Description']];
+  products.forEach(p => rows.push([p.barcode,p.name,p.category,p.size,p.price,p.stock,p.desc||'']));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Products');
+  XLSX.writeFile(wb, 'ventus_products_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  toast('Products Excel downloaded!');
+}
+function exportScanLog() {
+  const rows = [['Barcode','Product','Price','Scanned At','Bill ID']];
+  scanLog.forEach(s => rows.push([s.barcode,s.name,s.price,new Date(s.scannedAt).toLocaleString('en-IN'),s.billId]));
+  const wb = XLSX.utils.book_new();
+  XLSX.utils.book_append_sheet(wb, XLSX.utils.aoa_to_sheet(rows), 'Scan Log');
+  XLSX.writeFile(wb, 'ventus_scanlog_' + new Date().toISOString().slice(0,10) + '.xlsx');
+  toast('Scan log downloaded!');
+}
+function renderScanLog() {
+  const tbody = document.getElementById('scanLogTable');
+  if (!scanLog.length) { tbody.innerHTML='<tr><td colspan="5" class="no-data">No scans logged</td></tr>'; return; }
+  tbody.innerHTML = [...scanLog].reverse().slice(0,50).map(s=>`
+    <tr>
+      <td><code style="color:var(--accent2);font-size:.78rem">${s.barcode}</code></td>
+      <td>${s.name}</td><td>${fmt(s.price)}</td>
+      <td style="color:var(--muted);font-size:.8rem">${new Date(s.scannedAt).toLocaleString('en-IN')}</td>
+      <td><code style="font-size:.78rem">${s.billId}</code></td>
+    </tr>`).join('');
+}
+
+// ═══════ EXCEL LIVE VIEW ═══════
+const XLV_CONFIGS = {
+  sales: {
+    title:'Sales Report', subtitle:'All transactions', iconColor:'#6c63ff',
+    dlFn: () => exportSalesExcel(),
+    sheets: () => {
+      const from=document.getElementById('exportFrom').value, to=document.getElementById('exportTo').value;
+      let data=sales;
+      if(from) data=data.filter(s=>s.createdAt>=from);
+      if(to)   data=data.filter(s=>s.createdAt<=to+'T23:59:59');
+      return [
+        { name:'Sales Summary', headers:['Bill ID','Date','Time','Items','Subtotal','Discount','Total','By'],
+          rows:data.map(b=>[b.id,fmtDate(b.createdAt),fmtTime(b.createdAt),b.items.length,fmt(b.subtotal),fmt(b.discount),fmt(b.total),b.createdBy]) },
+        { name:'Sales Items',   headers:['Bill ID','Date','Product','Barcode','Size','Qty','Unit Price','Line Total'],
+          rows:data.flatMap(b=>b.items.map(i=>[b.id,fmtDate(b.createdAt),i.name,i.barcode,i.size,i.qty,fmt(i.price),fmt(i.price*i.qty)])) }
+      ];
+    }
+  },
+  products: {
+    title:'Product Inventory', subtitle:'Full stock list', iconColor:'#f59e0b',
+    dlFn: () => exportProductsExcel(),
+    sheets: () => [{ name:'Products', headers:['Barcode','Name','Category','Size','Price','Stock','Description'],
+      rows:products.map(p=>[p.barcode,p.name,p.category,p.size,fmt(p.price),p.stock,p.desc||'']) }]
+  },
+  scanlog: {
+    title:'Scan Log', subtitle:'All barcode scans', iconColor:'#10b981',
+    dlFn: () => exportScanLog(),
+    sheets: () => [{ name:'Scan Log', headers:['Barcode','Product','Price','Scanned At','Bill ID'],
+      rows:scanLog.map(s=>[s.barcode,s.name,fmt(s.price),new Date(s.scannedAt).toLocaleString('en-IN'),s.billId]) }]
+  }
+};
+let xlvCurrentType=null, xlvSheets=[], xlvActiveSheet=0;
+function viewExcel(type) {
+  xlvCurrentType=type;
+  const cfg=XLV_CONFIGS[type];
+  xlvSheets=cfg.sheets(); xlvActiveSheet=0;
+  document.getElementById('xlvTitle').textContent    = cfg.title;
+  document.getElementById('xlvSubtitle').textContent = cfg.subtitle;
+  document.getElementById('xlvIcon').style.background=`${cfg.iconColor}22`;
+  document.getElementById('xlvIcon').style.color     = cfg.iconColor;
+  document.getElementById('xlvIcon').style.border    =`1px solid ${cfg.iconColor}44`;
+  document.getElementById('xlvDlBtn').onclick        = cfg.dlFn;
+  const tabBar=document.getElementById('xlvTabs');
+  if(xlvSheets.length>1){
+    tabBar.style.display='flex';
+    tabBar.innerHTML=xlvSheets.map((s,i)=>`<button class="xlv-tab ${i===0?'active':''}" onclick="switchXlvSheet(${i})">${s.name}</button>`).join('');
+  } else { tabBar.style.display='none'; }
+  renderXlvSheet(0);
+  document.getElementById('xlvModal').classList.add('open');
+}
+function switchXlvSheet(idx){ xlvActiveSheet=idx; document.querySelectorAll('.xlv-tab').forEach((t,i)=>t.classList.toggle('active',i===idx)); renderXlvSheet(idx); }
+function renderXlvSheet(idx){
+  const sheet=xlvSheets[idx], table=document.getElementById('xlvTable');
+  if(!sheet||!sheet.rows.length){ table.innerHTML='<tr><td colspan="99" style="text-align:center;padding:40px;color:var(--muted)">No data available</td></tr>'; document.getElementById('xlvRowCount').textContent='0 rows'; return; }
+  let html='<thead><tr><th class="xlv-rn">#</th>'+sheet.headers.map(h=>`<th>${h}</th>`).join('')+'</tr></thead><tbody>';
+  sheet.rows.forEach((row,ri)=>{ html+=`<tr><td class="xlv-rn">${ri+1}</td>`+row.map(cell=>`<td>${cell??''}</td>`).join('')+'</tr>'; });
+  table.innerHTML=html+'</tbody>';
+  document.getElementById('xlvRowCount').textContent=`${sheet.rows.length} row${sheet.rows.length!==1?'s':''}  ·  ${sheet.headers.length} columns`;
+}
+function closeXlv(){ document.getElementById('xlvModal').classList.remove('open'); xlvCurrentType=null; }
+document.getElementById('xlvModal').addEventListener('click',function(e){ if(e.target===this) closeXlv(); });
+
+// ═══════ KICK OFF ═══════
+bootApp();
+</script>
+</body>
+</html>
